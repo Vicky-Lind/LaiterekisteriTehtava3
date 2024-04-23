@@ -4,27 +4,41 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Laiterekisteri
+// Libraries needed to access SQL Server
+using System.Data;
+using System.Data.SqlClient;
+using System.Globalization;
+using System.Collections;
+using System.Runtime.CompilerServices;
+
+namespace DeviceDb
 {
-    //------------------------------------
+    // CLASS DEFINITIONS FOR DIFFERENT DEVICE TYPES
+    // --------------------------------------------
+
+    // A super class for all kind of devices
+    // =====================================
     internal class Device
     {
+        // Fields and properties
+        // ----------------------
+
         private string name = "Uusi laite";
 
         public string Name
         { get { return name; } set { name = value; } }
 
-        private string purchaseDate = "01.01.2024";
+        private string purchaseDate = "1.1.1900";
 
         public string PurchaseDate
         { get { return purchaseDate; } set { purchaseDate = value; } }
 
-        private double price = 10.00;
+        private double price = 0.0d;
 
         public double Price
         { get { return price; } set { price = value; } }
 
-        private int warranty = 10;
+        private int warranty = 12;
 
         public int Warranty
         { get { return warranty; } set { warranty = value; } }
@@ -36,7 +50,7 @@ namespace Laiterekisteri
 
         private int amountRAM = 0;
 
-        public int AmountRAM
+        public int AmountRam
         { get { return amountRAM; } set { amountRAM = value; } }
 
         private int storageCapacity = 0;
@@ -44,7 +58,8 @@ namespace Laiterekisteri
         public int StorageCapacity
         { get { return storageCapacity; } set { storageCapacity = value; } }
 
-        //--------------------
+        // Constructors
+        // -------------
 
         public Device()
         {
@@ -55,103 +70,201 @@ namespace Laiterekisteri
             this.name = name;
         }
 
-        public Device(string purchaseDate, double price, int warranty)
+        public Device(string name, string purchaseDate, double price, int warranty)
         {
+            this.name = name;
             this.purchaseDate = purchaseDate;
             this.price = price;
             this.warranty = warranty;
         }
 
-        //--------------------
-
+        // Other methods in the superclass
+        // ------------
         public void ShowPurchaseInfo()
         {
-            Console.WriteLine("---------------------------");
-            Console.WriteLine("Laitteen nimi: " + Name);
-            Console.WriteLine("Ostopäivä: " + PurchaseDate);
-            Console.WriteLine("Hinta: " + Price);
-            Console.WriteLine("Takuu: " + Warranty + " kk");
+            // Show purchasing data
             Console.WriteLine();
+            Console.WriteLine("Laitteen hankintatiedot");
+            Console.WriteLine("-----------------------");
+            Console.WriteLine("Laitteen nimi: " + this.name);
+            Console.WriteLine("Ostopäivä: " + this.purchaseDate);
+            Console.WriteLine("Hankinta: " + this.price);
+            Console.WriteLine("Takuu: " + this.warranty + " kk");
         }
 
-        public void SetPurchaseInfo()
+        // Show technical data
+        public void ShowBasicTechnicalInfo()
         {
-            Console.WriteLine("Ostopäivä: ");
-            PurchaseDate = Console.ReadLine();
+            Console.WriteLine();
+            Console.WriteLine("Laitteen tekniset tiedot");
+            Console.WriteLine("------------------------");
+            Console.WriteLine("Koneen nimi: " + Name);
+            Console.WriteLine("Prosessori: " + ProcessorType);
+            Console.WriteLine("Keskusmuisti: " + AmountRam);
+            Console.WriteLine("Levytila: " + StorageCapacity);
+        }
 
-            Console.WriteLine("Hinta: ");
+        // Calculate the ending date of warranty
+        public void CalculateWarrantyEndingDate()
+        {
+            // Convert date sring to date time
+            DateTime startDate = DateTime.ParseExact(this.PurchaseDate,
+                                        "yyyy-MM-dd",
+                                         CultureInfo.InvariantCulture);
+
+            // Add warranty months to purchase date
+            DateTime endDate = startDate.AddMonths(this.Warranty);
+
+            // Convert it to ISO standard format
+            endDate = endDate.Date;
+
+            string isoDate = endDate.ToString("yyyy-MM-dd");
+
+            Console.WriteLine("Takuu päättyy: " + isoDate);
+        }
+    }
+
+    // Compurer class, a subclass of Device
+    // ====================================
+    internal class Computer : Device
+    {
+        // Constructors
+        // ------------
+        public Computer() : base()
+        { }
+
+        public Computer(string name) : base(name)
+        { }
+
+        public void setComputerInfo()
+        {
+            Console.Write("Ostopäivä muodossa vvvv-kk-pp: ");
+            PurchaseDate = Console.ReadLine();
+            Console.Write("Hankintahinta: ");
+            string price = Console.ReadLine();
+
+            // Use error handling while trying to convert string values to numerical values
             try
             {
-                Price = double.Parse(Console.ReadLine());
+                Price = double.Parse(price);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Virheellinen hintatieto" + ex.Message);
+                Console.WriteLine("Virheellinen hintatieto, käytä desimaalipilkkua (,)" + ex.Message);
             }
 
-            Console.WriteLine("Takuu kk: ");
-            Warranty = int.Parse(Console.ReadLine());
-        }
+            Console.Write("Takuun kesto kuukausina: ");
+            string warranty = Console.ReadLine();
 
-        public void ShowBasicTechnicalInfo()
-        {
-            Console.WriteLine("---------------------------");
-            Console.WriteLine("Koneen nimi: " + Name);
-            Console.WriteLine("Prosessori: " + ProcessorType);
-            Console.WriteLine("Keskusmuistin määrä: " + AmountRAM);
-            Console.WriteLine("Levytila: " + StorageCapacity);
-            Console.WriteLine();
-        }
+            try
+            {
+                Warranty = int.Parse(warranty);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Virheellinen takuutieto, vain kuukausien määrä kokonaislukuna " + ex.Message);
+            }
 
-        public void SetTechnicalInfo()
-        {
-            Console.Write("Anna koneen Keskusmuistin määrä: ");
-            AmountRAM = int.Parse(Console.ReadLine());
-
-            Console.Write("Anna koneen prosessorityyppi: ");
+            Console.Write("Prosessorin tyyppi: ");
             ProcessorType = Console.ReadLine();
+            Console.Write("Keskumuistin määrä (GB): ");
+            string amountRam = Console.ReadLine();
 
-            Console.Write("Anna koneen levytila: ");
-            StorageCapacity = int.Parse(Console.ReadLine());
+            try
+            {
+                AmountRam = int.Parse(amountRam);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Virheellinen muistin määrä, vain kokonaisluvut sallittu " + ex.Message);
+            }
+
+            Console.Write("Tallennuskapasiteetti (GB): ");
+            string storageCapacity = Console.ReadLine();
+
+            try
+            {
+                StorageCapacity = int.Parse(storageCapacity);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Virheellinen tallennustilan koko, vain kokonaisluvut sallittu " + ex.Message);
+            }
+            try
+            {
+                CalculateWarrantyEndingDate();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Ostopäivä virheellinen " + ex.Message);
+            }
         }
-    }
 
-    //------------------------------------
-    internal class Computer : Device
-    {
-        public Computer() : base()
+        public void saveToDb()
         {
+            // Add the computer to Device table
+            Console.WriteLine("Lisätään tietokone Laite-tauluun");
+
+            string connectionString = "Data Source=LS99-NOTEBOOK-2\\SQLEXPRESS;Initial Catalog=Laiterekisteri;Integrated Security=True";
+
+            string insertCommand = $"INSERT INTO dbo.Laite (Nimi, Hankintahinta, Hankintapaiva, Takuu, Prosessori, Keskusmuisti, Tallennustila, Laitetyyppi) VALUES ('{this.Name}', {this.Price}, '{this.PurchaseDate}', {this.Warranty}, '{this.ProcessorType}', {this.AmountRam}, {this.StorageCapacity}, 'Tietokone');";
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                SqlCommand command = new SqlCommand(insertCommand, connection);
+                command.ExecuteNonQuery();
+
+                connection.Close();
+            };
         }
 
-        public Computer(string name) : base(name)
+        public void getComputersFromDb()
         {
+            Console.WriteLine("Haetaan kaikki koneet tietokannasta...");
+
+            string connectionString = "Data Source=LS99-NOTEBOOK-2\\SQLEXPRESS;Initial Catalog=Laiterekisteri;Integrated Security=True";
+
+            string sqlQuery = "SELECT * FROM dbo.Laite;";
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                SqlCommand command = new SqlCommand(sqlQuery, connection);
+
+                command.CommandTimeout = 10;
+
+                SqlDataReader reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    Console.WriteLine("\t{0}\t{1}\t{2}\t{3}\t{4}", reader.GetString(0), reader.GetString(1), reader.GetInt32(2), reader.GetInt32(3), reader.GetString(4));
+                }
+                connection.Close();
+
+                break;
+            };
         }
     }
 
-    //------------------------------------
-    internal class Phone : Device
-    {
-    }
-
-    //------------------------------------
+    // Tablet class, a subclass of Device
+    // ====================================
     internal class Tablet : Device
     {
+        // subclass specific fields and properties
+        // ---------------------------------------
+
         private string operatingSystem;
 
         public string OperatingSystem
         { get { return operatingSystem; } set { operatingSystem = value; } }
-
-        private string inputMethod;
-
-        public string InputMethod
-        { get { return inputMethod; } set { inputMethod = value; } }
 
         private bool stylusEnabled = false;
 
         public bool StylusEnabled
         { get { return stylusEnabled; } set { stylusEnabled = value; } }
 
-        //--------------------
+        // Constructors
+        // --------------
 
         public Tablet() : base()
         {
@@ -161,82 +274,77 @@ namespace Laiterekisteri
         {
         }
 
-        //--------------------
-
-        public void ShowTabletInfo()
+        // Methods specific to Tablet class
+        // ----------------------------
+        public void TabletInfo()
         {
-            Console.WriteLine("---------------------------");
-            Console.WriteLine("Käyttöliittymä: " + OperatingSystem);
-            Console.WriteLine("Kynätuki: " + StylusEnabled);
             Console.WriteLine();
-        }
-
-        public void SetTabletInfo()
-        {
-            Console.Write("Anna tabletin käyttöliittymä: ");
-            OperatingSystem = Console.ReadLine();
-
-            Console.Write("Anna tabletin syöttötapa: ");
-            InputMethod = Console.ReadLine();
-
-            Console.Write("Toimiiko tabletti kynällä? kyllä/ei ");
-            string stylusAnswer = Console.ReadLine();
-            if (stylusAnswer == "kyllä")
-            {
-                StylusEnabled = true;
-            }
-            else if (stylusAnswer == "ei")
-            {
-                StylusEnabled = false;
-            }
+            Console.WriteLine("Tabletin erityitiedot");
+            Console.WriteLine("---------------------");
+            Console.WriteLine("Käyttöjärjestelmä: " + OperatingSystem);
+            Console.WriteLine("Kynätuki: " + StylusEnabled);
         }
     }
 
-    //------------------------------------
+    // THE PROGRAM
+    // ===========
     internal class Program
     {
         private static void Main(string[] args)
+
         {
+            // For ever loop to run the program
             while (true)
             {
-                Console.WriteLine("Minkä laitteen tiedot tallennetaan?");
-                Console.Write("1 Tietokone, 2 tabletti: ");
+                Console.WriteLine("Minkä laitteen tiedot tallenetaan? 🤖");
+                Console.Write("1 tietokone 💻, 2 tabletti 📱: ");
                 string type = Console.ReadLine();
+                Console.WriteLine("------------------------------------");
 
+                // Choices for different type of devices
                 switch (type)
                 {
                     case "1":
+
+                        // Prompt user to enter device information
                         Console.Write("Nimi: ");
-                        Computer computer = new Computer(Console.ReadLine());
-                        computer.SetTechnicalInfo();
+                        string computerName = Console.ReadLine();
+                        Computer computer = new Computer(computerName);
+
+                        computer.setComputerInfo();
+
+                        // Use methods to show entered values
+                        computer.ShowPurchaseInfo();
                         computer.ShowBasicTechnicalInfo();
-                        computer.SetPurchaseInfo();
+                        computer.saveToDb();
+
                         break;
 
                     case "2":
                         Console.Write("Nimi: ");
-
-                        Tablet tablet = new Tablet(Console.ReadLine());
-                        tablet.SetTabletInfo();
-                        tablet.ShowTabletInfo();
-                        tablet.SetPurchaseInfo();
+                        string tabletName = Console.ReadLine();
+                        Tablet tablet = new Tablet(tabletName);
                         break;
 
                     default:
-                        Console.WriteLine("Valitse joko 1 tai 2");
+                        Console.WriteLine("Virheellinen valinta, anna pelkkä numero");
                         break;
                 }
 
-                Console.WriteLine("Haluatko jatkaa? K/e");
-                string continueAnswer = Console.ReadLine().Trim().ToLower();
-
-                if (continueAnswer == "e")
+                Console.WriteLine("Haluatko jatkaa k/e?");
+                string response = Console.ReadLine();
+                if (response == "e")
                 {
+                    Computer computer = new Computer();
+                    computer.getComputersFromDb();
+
                     break;
                 }
+                else
+                {
+                    continue;
+                }
             }
-
-            Console.ReadLine();
         }
     }
 }
